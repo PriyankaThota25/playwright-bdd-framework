@@ -17,3 +17,16 @@ Feature: Shopping journey
     Then I should see my order confirmation
     When I delete my account
     Then I should see my account deletion confirmation
+
+  @e2e
+  Scenario: New customer removes a product from the cart
+    Given I am on the home page
+    When I sign up as a new customer
+    Then I should be logged in as the new customer
+    When I navigate to the products page
+    And I search for "Dress" in the product catalog
+    And I add the first search result to my cart
+    And I remove the product from my cart
+    Then I should see that my cart is empty
+    When I delete my account
+    Then I should see my account deletion confirmation
