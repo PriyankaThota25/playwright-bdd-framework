@@ -1,0 +1,16 @@
+base_url: "https://automationexercise.com"
+browser: "chromium"
+headless: true
+slow_mo: 0
+viewport:
+  width: 1920
+  height: 1080
+timeout: 10000
+navigation_timeout: 30000
+credentials:
+  registered_user:
+    email: "priyankathota25@gmail.com"
+    password: "Jaydiya@1422"
+  invalid_user:
+    email: "no_such_user_zzz@example.com"
+    password: "wrong-password"
