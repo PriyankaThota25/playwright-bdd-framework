@@ -63,6 +63,16 @@ def proceed_to_checkout(cart_page: CartPage) -> None:
     cart_page.proceed_to_checkout()
 
 
+@when("I remove the product from my cart")
+def remove_product_from_cart(cart_page: CartPage) -> None:
+    cart_page.remove_first_product()
+
+
+@then("I should see that my cart is empty")
+def assert_cart_is_empty(cart_page: CartPage) -> None:
+    assert "cart is empty" in cart_page.empty_cart_message_text().lower()
+
+
 @when("I place the order with valid payment details")
 def place_order_with_valid_payment_details(
     checkout_page: CheckoutPage, payment_page: PaymentPage, new_customer: dict
