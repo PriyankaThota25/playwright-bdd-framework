@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 from config.settings import Settings, get_settings
 from core.browser_factory import launch_browser, new_context
 from core.logger import get_logger, step_log_capture
-from core.report import RunMeta, ScenarioResult, StepResult, write_report
+from core.report import RunMeta, ScenarioResult, StepResult, write_report, write_results_json
 from core.screenshot import ScenarioScreenshots
 
 logger = get_logger(__name__)
@@ -170,3 +170,4 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     _run_meta.end_time = datetime.now()
     path = write_report(_scenario_results, _run_meta)
     logger.info("Wrote test report -> %s", path)
+    write_results_json(_scenario_results)
