@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from html import escape
@@ -688,3 +689,28 @@ def write_report(results: list[ScenarioResult], meta: RunMeta | None = None) -> 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_FILE.write_text(render_report(results, meta), encoding="utf-8")
     return REPORT_FILE
+
+
+
+def write_results_json(results: list[ScenarioResult]) -> Path:
+    """Machine-readable failures for ci/analyze_failures.py (failed step, error, screenshot)."""
+    failed = []
+    for r in results:
+        if r.status != "failed":
+            continue
+        step = next((st for st in r.steps if st.status == "failed"), None)
+        failed.append(
+            {
+                "scenario": r.name,
+                "feature": r.feature_name,
+                "feature_file": r.feature_file,
+                "failed_step": f"{step.keyword} {step.name}".strip() if step else None,
+                "step_error": (step.error if step else r.error) or "",
+                "step_logs": step.logs[-10:] if step else [],
+                "screenshot": _rel(step.screenshot) if step and step.screenshot else None,
+                "steps_passed_before": sum(1 for st in r.steps if st.status == "passed"),
+            }
+        )
+    path = REPORTS_DIR / "results.json"
+    path.write_text(json.dumps({"failed": failed}, indent=2), encoding="utf-8")
+    return path

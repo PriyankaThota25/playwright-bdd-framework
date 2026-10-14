@@ -105,6 +105,17 @@ pipeline {
                 allowMissing: true
             ])
 
+            // Failure analysis report (which scenario/step failed and why)
+            sh 'python3 ci/analyze_failures.py reports || true'
+            publishHTML(target: [
+                reportName: 'Failure Analysis',
+                reportDir: 'reports',
+                reportFiles: 'failure_analysis.html',
+                keepAll: true,
+                alwaysLinkToLastBuild: true,
+                allowMissing: true
+            ])
+
             archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true, fingerprint: true
         }
         failure {
