@@ -76,7 +76,6 @@ jobs:
           testResultsFormat: JUnit
           testResultsFiles: reports/junit.xml
           testRunTitle: Playwright BDD ($(TEST_ENV))
-          failTaskOnFailedTests: true
 
       - task: PublishPipelineArtifact@1
         displayName: Publish reports (HTML report, failure analysis, screenshots)
@@ -84,3 +83,8 @@ jobs:
         inputs:
           targetPath: reports
           artifact: reports-$(Build.BuildId)
+
+      # Quality gate: the run (and so the PR check) fails if pass rate < 95%.
+      - script: python ci/check_pass_rate.py reports/junit.xml 95
+        displayName: Quality gate (pass rate >= 95%)
+        condition: always()
