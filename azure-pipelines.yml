@@ -1,0 +1,86 @@
+# Azure DevOps pipeline: same flow as the Jenkinsfile.
+# Run on a Microsoft-hosted Ubuntu agent (has Python and the OS libs Playwright needs
+# via `playwright install --with-deps`).
+
+trigger:
+  branches:
+    include: [main]
+
+pr:
+  branches:
+    include: [main]
+
+parameters:
+  - name: testEnv
+    displayName: Config file to load from config/environments/<name>.yaml
+    type: string
+    default: ci
+    values: [ci, dev]
+  - name: marker
+    displayName: pytest-bdd tag to run
+    type: string
+    default: all
+    values: [all, smoke, e2e]
+  - name: featureFile
+    displayName: "Optional: only run this feature file, e.g. login.feature"
+    type: string
+    default: ' '
+  - name: parallel
+    displayName: Run scenarios in parallel (pytest-xdist -n auto)
+    type: boolean
+    default: false
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  TEST_ENV: ${{ parameters.testEnv }}
+
+jobs:
+  - job: tests
+    displayName: Playwright BDD tests
+    timeoutInMinutes: 30
+    steps:
+      - checkout: self
+
+      - task: UsePythonVersion@0
+        displayName: Use Python 3.13
+        inputs:
+          versionSpec: '3.13'
+
+      - script: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+        displayName: Install dependencies
+
+      - script: |
+          ARGS=""
+          if [ "${{ parameters.marker }}" != "all" ]; then ARGS="$ARGS -m ${{ parameters.marker }}"; fi
+          FEATURE="$(echo '${{ parameters.featureFile }}' | xargs)"
+          if [ -n "$FEATURE" ]; then ARGS="$ARGS --feature-file=$FEATURE"; fi
+          if [ "${{ parameters.parallel }}" = "True" ]; then ARGS="$ARGS -n auto"; fi
+          # '|| true' so a failed run still reaches the report steps; results are
+          # evaluated by PublishTestResults below.
+          pytest $ARGS --junitxml=reports/junit.xml || true
+        displayName: Run tests
+
+      - script: python ci/analyze_failures.py reports
+        displayName: Build failure analysis report
+        condition: always()
+
+      - task: PublishTestResults@2
+        displayName: Publish test results
+        condition: always()
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: reports/junit.xml
+          testRunTitle: Playwright BDD ($(TEST_ENV))
+          failTaskOnFailedTests: true
+
+      - task: PublishPipelineArtifact@1
+        displayName: Publish reports (HTML report, failure analysis, screenshots)
+        condition: always()
+        inputs:
+          targetPath: reports
+          artifact: reports-$(Build.BuildId)
