@@ -14,7 +14,9 @@ class BasePage:
     # --- navigation ---------------------------------------------------
     def goto(self, path: str = "/") -> None:
         logger.info("Navigating to %s", path)
-        self.page.goto(path)
+        # Don't wait for the full 'load' event: the site's ads/third-party
+        # resources can be slow and cause 30s timeouts.
+        self.page.goto(path, wait_until="domcontentloaded")
 
     # --- actions --------------------------------------------------------
     def click(self, locator: Locator, *, name: str = "") -> None:

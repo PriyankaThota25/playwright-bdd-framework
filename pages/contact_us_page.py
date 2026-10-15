@@ -10,7 +10,7 @@ class ContactUsPage(BasePage):
     def __init__(self, page: Page):
         super().__init__(page)
         self.contact_us_button = page.locator("a:has-text('Contact Us')")
-        self.name_field = page.locator("[data-qa='name1']")
+        self.name_field = page.locator("[data-qa='name']")
         self.email_field = page.locator("[data-qa='email']")
         self.subject_field = page.locator("[data-qa='subject']")
         self.message_field = page.locator("[data-qa='message']")
