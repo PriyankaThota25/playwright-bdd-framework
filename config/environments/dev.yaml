@@ -1,4 +1,5 @@
 base_url: "https://automationexercise.com"
+api_base_url: "https://automationexercise.com/api"
 browser: "chromium"
 headless: false
 slow_mo: 0

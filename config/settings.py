@@ -21,6 +21,7 @@ class Viewport:
 class Settings:
     env_name: str
     base_url: str
+    api_base_url: str
     browser: str
     headless: bool
     slow_mo: int
@@ -46,6 +47,7 @@ def get_settings(env_name: str | None = None) -> Settings:
     return Settings(
         env_name=env_name,
         base_url=raw["base_url"],
+        api_base_url=raw.get("api_base_url", f"{raw['base_url']}/api"),
         browser=raw["browser"],
         headless=raw["headless"],
         slow_mo=raw.get("slow_mo", 0),

@@ -6,6 +6,7 @@ from datetime import datetime
 from importlib.metadata import version as pkg_version
 
 import pytest
+import requests
 from playwright.sync_api import sync_playwright
 
 from config.settings import Settings, get_settings
@@ -85,8 +86,20 @@ def page(context):
     yield pg
 
 
+@pytest.fixture(scope="session")
+def api_client():
+    """A plain requests.Session shared across API scenarios - no browser
+    involved, so @api-tagged scenarios stay fast and don't need Playwright."""
+    session = requests.Session()
+    yield session
+    session.close()
+
+
 def pytest_bdd_before_scenario(request: pytest.FixtureRequest, feature, scenario) -> None:
-    request.node._screenshots = ScenarioScreenshots(scenario.name)
+    # @api scenarios don't use a browser, so skip wiring up screenshots - that
+    # would force-launch one via request.getfixturevalue("page") in the hooks below.
+    is_api = request.node.get_closest_marker("api") is not None
+    request.node._screenshots = None if is_api else ScenarioScreenshots(scenario.name)
     request.node._report_scenario = ScenarioResult(
         name=scenario.name,
         feature_name=feature.name or os.path.basename(feature.filename),
@@ -107,10 +120,12 @@ def pytest_bdd_after_step(
     result: ScenarioResult | None = getattr(request.node, "_report_scenario", None)
     screenshots: ScenarioScreenshots | None = getattr(request.node, "_screenshots", None)
     logs = step_log_capture.drain()
-    if result is None or screenshots is None:
+    if result is None:
         return
-    page = request.getfixturevalue("page")
-    path = screenshots.capture(page)
+    path = None
+    if screenshots is not None:
+        page = request.getfixturevalue("page")
+        path = screenshots.capture(page)
     result.steps.append(
         StepResult(keyword=step.keyword, name=step.name, status="passed", logs=logs, screenshot=path)
     )
@@ -128,10 +143,12 @@ def pytest_bdd_step_error(
     result: ScenarioResult | None = getattr(request.node, "_report_scenario", None)
     screenshots: ScenarioScreenshots | None = getattr(request.node, "_screenshots", None)
     logs = step_log_capture.drain()
-    if result is None or screenshots is None:
+    if result is None:
         return
-    page = request.getfixturevalue("page")
-    path = screenshots.capture(page, failed=True)
+    path = None
+    if screenshots is not None:
+        page = request.getfixturevalue("page")
+        path = screenshots.capture(page, failed=True)
     result.steps.append(
         StepResult(
             keyword=step.keyword,

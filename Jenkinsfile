@@ -18,7 +18,7 @@ pipeline {
         )
         choice(
             name: 'MARKER',
-            choices: ['all', 'smoke', 'e2e'],
+            choices: ['all', 'smoke', 'e2e', 'api'],
             description: 'Which pytest-bdd tag to run (pytest.ini: smoke, e2e)'
         )
         string(
